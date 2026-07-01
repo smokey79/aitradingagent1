@@ -1,26 +1,17 @@
-# secrets / credentials -- NEVER commit these
 .env
 client_secret.json
 token.json
 *.pem
 *.key
-
-# node
+*.ev
 node_modules/
-npm-debug.log*
-
-# python
 __pycache__/
 *.pyc
 .venv/
-venv/
-
-# generated/runtime data
 agents/sentiment/data/
 strategy_memory.json
 *.log
 .pm2/
-
-# build artifacts
+logs/
 dist/
 build/
