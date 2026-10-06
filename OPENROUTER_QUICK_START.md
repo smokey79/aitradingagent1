@@ -18,7 +18,7 @@
 2. Click "Sign up" → use email: `barclay0611@gmail.com`
 3. In dashboard, go to API Keys → Create new key
 4. Copy the key (starts with `sk-or-`)
-5. Save it safely (you'll use it in .env)
+5. Save it safely (you'll use it in master.env)
 
 ---
 
@@ -45,10 +45,10 @@ ollama list
 
 **Do NOT edit files in VS Code. Use any text editor (Notepad++, TextEdit, etc).**
 
-1. Open: `/home/user/aitradingagent1/.env.openrouter.example`
+1. Open: `/home/user/aitradingagent1/master.env.example`
 2. Copy all content
-3. Create new file: `/home/user/aitradingagent1/.env`
-4. Paste content into .env
+3. Create new file: `/home/user/aitradingagent1/master.env`
+4. Paste content into master.env
 5. Find this line:
    ```
    OPENROUTER_API_KEY=sk-or-xxxxx
@@ -118,7 +118,7 @@ You should see:
 
 **⚠️ Only after you've tested paper mode and understand the signals.**
 
-Edit `.env`:
+Edit `master.env`:
 ```
 PAPER_TRADING=false
 ```
@@ -147,7 +147,7 @@ ollama serve
 (Leave this terminal open.)
 
 ### "OpenRouter API key invalid"
-Double-check your key in `.env`:
+Double-check your key in `master.env`:
 - No spaces before/after
 - Starts with `sk-or-`
 - From https://openrouter.ai dashboard
@@ -159,7 +159,7 @@ curl https://api.binance.com/api/v3/ping
 ```
 
 ### Bot runs but no trades executed
-Check MIN_CONFIDENCE in .env. If agents don't agree strongly enough, trades are skipped (that's the risk gate working).
+Check MIN_CONFIDENCE in master.env. If agents don't agree strongly enough, trades are skipped (that's the risk gate working).
 
 ---
 
@@ -167,14 +167,14 @@ Check MIN_CONFIDENCE in .env. If agents don't agree strongly enough, trades are 
 
 ```
 /home/user/aitradingagent1/
-├── .env                          ← YOUR CONFIG (created from example)
+├── master.env                        ← YOUR CONFIG (created from example)
 ├── agents/
 │   └── openrouter/
 │       └── openrouterAgent.js   ← NEW: Free model rotation
 ├── orchestrator/
 │   ├── consensus-openrouter.js  ← NEW: Updated consensus
 │   └── index-openrouter.js      ← NEW: Updated main loop
-├── .env.openrouter.example       ← Reference (don't edit)
+├── master.env.example       ← Reference (don't edit)
 └── OPENROUTER_QUICK_START.md     ← This file
 ```
 
@@ -217,7 +217,7 @@ Much cheaper than paying for Claude/GPT-4 APIs!
    - Understand risk gate rules
 
 2. **Optimize for Your Market:**
-   - Edit TRADING_PAIRS in .env
+   - Edit TRADING_PAIRS in master.env
    - Tune MIN_CONFIDENCE (start at 0.70)
    - Adjust LEVERAGE_MAX (start at 1x, move to 2-3x after seeing profits)
 
@@ -231,7 +231,7 @@ Much cheaper than paying for Claude/GPT-4 APIs!
 ## Support
 
 If stuck:
-- Check `.env` has your OpenRouter key
+- Check `master.env` has your OpenRouter key
 - Verify Ollama running: `ollama list` shows `hermes3`
 - Read error logs carefully (they tell you what's wrong)
 - Adjust timeouts if agents timing out

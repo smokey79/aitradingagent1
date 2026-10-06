@@ -2,7 +2,7 @@
  * Dashboard WebSocket Server
  * Streams live trade signals, balance, and agent status to the React dashboard.
  */
-require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+require('../utils/loadEnv');
 const express = require('express');
 const http    = require('http');
 const { WebSocketServer } = require('ws');

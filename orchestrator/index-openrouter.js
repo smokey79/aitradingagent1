@@ -3,7 +3,7 @@
  * Main loop: fetch data → poll agents → consensus → risk gate → execute
  * Uses free OpenRouter + local Hermes (zero API cost)
  */
-require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+require('../utils/loadEnv');
 const cron = require('node-cron');
 const logger = require('../utils/logger');
 const { fetchMarketData } = require('../data/marketData');

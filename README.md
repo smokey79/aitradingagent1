@@ -10,7 +10,7 @@ Enterprise-grade multi-LLM crypto trading engine — UK compliant (Bitget + Cryp
 ├── data/               ← CMC, Glassnode, DexScreener feeds
 ├── utils/exchangeRouter, profitAllocator, logger
 ├── dashboard/          ← Live web dashboard
-├── .env                ← YOUR KEYS — never goes to GitHub
+├── master.env              ← YOUR KEYS — never goes to GitHub
 └── ecosystem.config.js ← PM2 process manager
 ```
 
@@ -25,7 +25,7 @@ npm run paper
 - 40% reinvested | 50% → BTC savings | 10% → long-term hold
 - Auto-triggers at 2x initial deposit
 
-## Still needed in .env
+## Still needed in master.env
 - BITGET_API_PASSPHRASE — Bitget website → avatar → API Management
 - ANTHROPIC_API_KEY — console.anthropic.com → API Keys
 - GLASSNODE_API_KEY — studio.glassnode.com → Account → API (optional)

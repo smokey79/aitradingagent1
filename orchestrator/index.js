@@ -2,7 +2,7 @@
  * AiTradingAgent — Main Orchestrator
  * Runs the full cycle: fetch data → poll all agents → consensus → risk gate → execute
  */
-require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+require('../utils/loadEnv');
 const cron = require('node-cron');
 const logger = require('../utils/logger');
 const { fetchMarketData } = require('../data/marketData');
