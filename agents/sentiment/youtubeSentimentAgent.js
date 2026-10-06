@@ -17,7 +17,7 @@ const path = require('path');
 const { google } = require('googleapis');
 const { YoutubeTranscript } = require('youtube-transcript');
 const axios = require('axios');
-require('dotenv').config();
+require('../../utils/loadEnv');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const TOKEN_PATH = path.join(__dirname, 'token.json');
