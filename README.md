@@ -29,3 +29,10 @@ npm run paper
 - BITGET_API_PASSPHRASE — Bitget website → avatar → API Management
 - ANTHROPIC_API_KEY — console.anthropic.com → API Keys
 - GLASSNODE_API_KEY — studio.glassnode.com → Account → API (optional)
+
+## Community sentiment (Reddit / TradingView / Trading212)
+`agents/community/communityAgent.js` is the 6th consensus agent (12% weight).
+- Reddit works with no key (public RSS). Change subreddits with `REDDIT_SUBS` in `.env`.
+- Add TradingView / Trading212 / any RSS feed with `COMMUNITY_FEEDS` (see `.env.example`).
+- Paste any comment text (one per line) into `data/community/inbox.txt` and it is scored too.
+- Everything collected is saved to `data/community/comments.jsonl`; per-source trust is learned in `source_weights.json`.

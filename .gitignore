@@ -15,3 +15,6 @@ strategy_memory.json
 logs/
 dist/
 build/
+
+# community data collected by the bot
+data/community/

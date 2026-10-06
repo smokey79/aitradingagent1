@@ -9,14 +9,16 @@ const gpt4oAgent   = require('../agents/gpt4o/gpt4oAgent');
 const geminiAgent  = require('../agents/gemini/geminiAgent');
 const hermesAgent  = require('../agents/hermes/hermesAgent');
 const sentimentAgent = require('../agents/sentiment/youtubeSentimentAgent');
+const communityAgent = require('../agents/community/communityAgent');
 
 // Agent weights — Hermes acts as validator/tie-breaker
 const AGENT_WEIGHTS = {
-  claude:    0.25,
-  gpt4o:     0.20,
-  gemini:    0.20,
-  hermes:    0.20,  // local Hermes consensus validator
-  sentiment: 0.15,
+  claude:    0.22,
+  gpt4o:     0.18,
+  gemini:    0.18,
+  hermes:    0.17,  // local Hermes consensus validator
+  sentiment: 0.13,
+  community: 0.12,  // Reddit / TradingView / Trading212 chatter (noisy, so lowest weight)
 };
 
 const SIGNAL_SCORES = { bullish: 1, neutral: 0, bearish: -1 };
@@ -31,9 +33,10 @@ async function runConsensus(pair, marketData) {
     withTimeout(geminiAgent.getSignal(symbol, marketData),   15000, 'gemini'),
     withTimeout(hermesAgent.getSignal(symbol, marketData),   20000, 'hermes'),
     withTimeout(sentimentAgent.getSentimentSignal(symbol),   15000, 'sentiment'),
+    withTimeout(communityAgent.getCommunitySignal(symbol, marketData), 30000, 'community'),
   ]);
 
-  const agentNames = ['claude', 'gpt4o', 'gemini', 'hermes', 'sentiment'];
+  const agentNames = ['claude', 'gpt4o', 'gemini', 'hermes', 'sentiment', 'community'];
   const signals = [];
 
   for (let i = 0; i < results.length; i++) {
