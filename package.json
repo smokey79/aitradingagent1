@@ -19,6 +19,8 @@
     "ws": "^8.16.0",
     "youtube-transcript": "^1.2.1",
     "winston": "^3.11.0",
-    "technicalindicators": "^3.1.0"
+    "technicalindicators": "^3.1.0",
+    "@langchain/core": "^1.0.0",
+    "@langchain/langgraph": "^1.0.0"
   }
 }
