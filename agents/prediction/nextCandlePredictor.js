@@ -5,6 +5,8 @@
  */
 const fs = require('fs');
 const ccxt = require('ccxt');
+const { getCrossAssetCorrelation } = require('./crossAssetCorrelation');
+const { recommendPaperStrategy } = require('./contextualBandit');
 
 const EPS = 1e-12;
 const FEATURE_COUNT = 12;
@@ -174,6 +176,23 @@ function featureAt(bars, index) {
   ];
 }
 
+function deriveRegime(bars) {
+  const closes = bars.map((bar) => bar[4]);
+  const returns = [];
+  for (let i = Math.max(1, closes.length - 97); i < closes.length; i++) {
+    returns.push(Math.log(closes[i] / closes[i - 1]));
+  }
+  const recent = returns.slice(-24);
+  const longer = returns.slice(-96);
+  const drift = closes.length >= 7 ? Math.log(closes[closes.length - 1] / closes[closes.length - 7]) : 0;
+  const recentVol = std(recent);
+  const longVol = std(longer);
+  const threshold = Math.max(0.001, recentVol * 0.35);
+  const trend = drift > threshold ? 'up' : drift < -threshold ? 'down' : 'flat';
+  const volatility = longVol > 0 && recentVol > longVol * 1.15 ? 'highvol' : 'lowvol';
+  return trend + '_' + volatility;
+}
+
 function makeExamples(bars) {
   const examples = [];
   for (let i = 24; i < bars.length - 1; i++) {
@@ -299,6 +318,9 @@ async function predictNextCandle(pair) {
   const probabilityUp = predict(featureAt(bars, bars.length - 1));
   const validationPassed = holdout.samples >= 100 &&
     holdout.brier < holdout.baseRateBrier && holdout.balancedAccuracy > 0.5;
+  const regime = deriveRegime(bars);
+  const correlation = getCrossAssetCorrelation(bars, loaded.intervalMs);
+  const paperLearning = recommendPaperStrategy(regime);
 
   return {
     status: 'shadow_only',
@@ -313,6 +335,9 @@ async function predictNextCandle(pair) {
     direction: probabilityUp >= 0.5 ? 'up' : 'down',
     probabilityUp: Number(probabilityUp.toFixed(4)),
     probabilityDown: Number((1 - probabilityUp).toFixed(4)),
+    regime,
+    crossAssetCorrelation: correlation,
+    paperLearning,
     holdout: {
       samples: holdout.samples,
       accuracy: Number(holdout.accuracy.toFixed(4)),
@@ -322,8 +347,8 @@ async function predictNextCandle(pair) {
       beatsSimpleBaseRate: validationPassed,
     },
     exchangeError: loaded.exchangeError,
-    note: 'Forecast is research-only. Holdout results are one recent time block and do not establish future profitability.',
+    note: 'Forecast, correlations, and paper strategy ranking are advisory only. Holdout results are one recent time block and do not establish future profitability.',
   };
 }
 
-module.exports = { predictNextCandle, loadCandles, makeExamples, featureAt };
+module.exports = { predictNextCandle, loadCandles, makeExamples, featureAt, deriveRegime };
