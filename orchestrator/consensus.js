@@ -1,84 +1,77 @@
 /**
- * Consensus Engine
- * Polls all agents in parallel, applies credibility weights,
- * returns a single weighted signal + confidence score.
+ * Advisory AI consensus. Social is disabled by default; when enabled it produces
+ * a separate paired challenger score and never changes the price-only result.
+ * These scores are agent agreement, not calibrated probabilities of trade success.
  */
 const logger = require('../utils/logger');
-const claudeAgent  = require('../agents/claude/claudeAgent');
-const gpt4oAgent   = require('../agents/gpt4o/gpt4oAgent');
-const geminiAgent  = require('../agents/gemini/geminiAgent');
-const hermesAgent  = require('../agents/hermes/hermesAgent');
-const sentimentAgent = require('../agents/sentiment/youtubeSentimentAgent');
-
-// Agent weights — Hermes acts as validator/tie-breaker
-const AGENT_WEIGHTS = {
-  claude:    0.25,
-  gpt4o:     0.20,
-  gemini:    0.20,
-  hermes:    0.20,  // local Hermes consensus validator
-  sentiment: 0.15,
+const agents = {
+  claude: require('../agents/claude/claudeAgent'),
+  gpt4o: require('../agents/gpt4o/gpt4oAgent'),
+  gemini: require('../agents/gemini/geminiAgent'),
+  hermes: require('../agents/hermes/hermesAgent'),
 };
+const weights = { claude: 0.25, gpt4o: 0.20, gemini: 0.20, hermes: 0.20, sentiment: 0.15 };
+const scores = { bullish: 1, neutral: 0, bearish: -1 };
 
-const SIGNAL_SCORES = { bullish: 1, neutral: 0, bearish: -1 };
-
-async function runConsensus(pair, marketData) {
-  const symbol = pair.split('/')[0];
-
-  // Poll all agents simultaneously — don't let one slow agent block others
-  const results = await Promise.allSettled([
-    withTimeout(claudeAgent.getSignal(symbol, marketData),   15000, 'claude'),
-    withTimeout(gpt4oAgent.getSignal(symbol, marketData),    15000, 'gpt4o'),
-    withTimeout(geminiAgent.getSignal(symbol, marketData),   15000, 'gemini'),
-    withTimeout(hermesAgent.getSignal(symbol, marketData),   20000, 'hermes'),
-    withTimeout(sentimentAgent.getSentimentSignal(symbol),   15000, 'sentiment'),
-  ]);
-
-  const agentNames = ['claude', 'gpt4o', 'gemini', 'hermes', 'sentiment'];
-  const signals = [];
-
-  for (let i = 0; i < results.length; i++) {
-    const name = agentNames[i];
-    if (results[i].status === 'fulfilled') {
-      signals.push({ name, ...results[i].value, weight: AGENT_WEIGHTS[name] });
-      logger.info(`  [${name}] ${results[i].value.signal} @ ${(results[i].value.confidence * 100).toFixed(0)}%`);
-    } else {
-      logger.warn(`  [${name}] ⚠️  failed: ${results[i].reason?.message}`);
-    }
-  }
-
-  if (signals.length === 0) {
-    return { signal: 'neutral', confidence: 0, agentsAgreeing: 0, totalAgents: agentNames.length, breakdown: [] };
-  }
-
-  // Weighted average
+function aggregate(signals, expectedNames) {
+  const valid = signals.filter((s) => expectedNames.includes(s.name) &&
+    Object.hasOwn(scores, s.signal) && Number.isFinite(s.confidence) &&
+    s.confidence >= 0 && s.confidence <= 1);
   let weightedScore = 0, totalWeight = 0;
-  for (const s of signals) {
-    const effectiveWeight = s.weight * s.confidence;
-    weightedScore += (SIGNAL_SCORES[s.signal] || 0) * effectiveWeight;
-    totalWeight += effectiveWeight;
+  for (const s of valid) {
+    const effective = weights[s.name] * s.confidence;
+    weightedScore += scores[s.signal] * effective;
+    totalWeight += effective;
   }
-
-  const avgScore = totalWeight > 0 ? weightedScore / totalWeight : 0;
+  const avgScore = totalWeight ? weightedScore / totalWeight : 0;
   const signal = avgScore > 0.2 ? 'bullish' : avgScore < -0.2 ? 'bearish' : 'neutral';
-  const confidence = Math.min(1, Math.abs(avgScore) * (signals.length / agentNames.length));
-
-  const agentsAgreeing = signals.filter(s => s.signal === signal).length;
-
   return {
     signal,
-    confidence,
-    avgScore,
-    agentsAgreeing,
-    totalAgents: agentNames.length,
-    breakdown: signals.map(s => ({ name: s.name, signal: s.signal, confidence: s.confidence, reason: s.reason })),
+    confidence: Math.min(1, Math.abs(avgScore) * valid.length / expectedNames.length),
+    agentsAgreeing: valid.filter((s) => s.signal === signal).length,
+    totalAgents: expectedNames.length,
+    breakdown: valid.map(({name, signal, confidence, reason}) => ({name, signal, confidence, reason})),
   };
 }
 
-function withTimeout(promise, ms, name) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error(`${name} timed out after ${ms}ms`)), ms))
-  ]);
+async function withTimeout(promise, ms, name) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(name + ' timed out')), ms); }),
+    ]);
+  } finally { clearTimeout(timer); }
 }
 
-module.exports = { runConsensus };
+async function runConsensus(pair, marketData) {
+  const names = Object.keys(agents);
+  const results = await Promise.allSettled(names.map((name) =>
+    withTimeout(Promise.resolve().then(() => agents[name].getSignal(pair.split('/')[0], marketData)),
+      name === 'hermes' ? 20000 : 15000, name)));
+  const signals = [];
+  results.forEach((result, i) => {
+    if (result.status === 'fulfilled') signals.push({ ...result.value, name: names[i] });
+    else logger.warn('[' + names[i] + '] unavailable: ' + result.reason.message);
+  });
+  const baseline = aggregate(signals, names);
+  let socialChallenger = null;
+  if (process.env.SOCIAL_ABLATION_ENABLED === 'true') {
+    // Deliberate research opt-in: optional social source performs its own timed fetch.
+    // Keep source availability separate; it is not part of the captured price snapshot.
+    const socialKnownAt = Date.now();
+    try {
+      const agent = require('../agents/sentiment/youtubeSentimentAgent');
+      const social = await withTimeout(agent.getSentimentSignal(pair.split('/')[0]), 15000, 'sentiment');
+      socialChallenger = {
+        ...aggregate(signals.concat({ ...social, name: 'sentiment' }), names.concat('sentiment')),
+        retrievedAt: Date.now(), requestedAt: socialKnownAt,
+        status: 'unvalidated_research_score',
+      };
+    } catch (err) { socialChallenger = { status: 'unavailable' }; }
+  }
+  return { ...baseline, snapshotId: marketData.snapshotId, baseline: 'price_only_agents',
+    socialChallenger, executionAllowed: false };
+}
+
+module.exports = { runConsensus, aggregate };
