@@ -5,7 +5,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const cron = require('node-cron');
 const logger = require('../utils/logger');
-const { buildSnapshot, freeze, attachFeeds } = require('../data/sharedSnapshot');
+const { buildSnapshot, freeze, attachFeeds, attachAnalysis } = require('../data/sharedSnapshot');
 const { collectAgentFeeds } = require('../data/agentFeeds');
 const { hardFilter } = require('../risk-gate/hardFilter');
 const { runConsensus } = require('./consensus');
@@ -33,14 +33,17 @@ async function runTradingCycle() {
         // Shared optional feeds are fetched once after rejection checks.
         snapshot = attachFeeds(snapshot, await collectAgentFeeds(pair));
         saveSnapshot(snapshot);
+        const forecast = await runPredictionGraph(pair, snapshot);
+        snapshot = attachAnalysis(snapshot, forecast);
+        saveSnapshot(snapshot);
         const marketData = freeze({
           pair, snapshotId: snapshot.id, features: snapshot.features, feeds: snapshot.feeds,
+          mlPredictions: snapshot.analysis,
           featureVersion: snapshot.featureVersion, observedAt: snapshot.observedAt,
           asOf: snapshot.candleClose, ohlcv: snapshot.candles.bars, orderbook: snapshot.book,
           // Do not relabel a USDT quote as a USD aggregator quote.
           executionReference: { price: snapshot.book.mid, currency: 'USDT', source: 'bitget_orderbook' },
         });
-        const forecast = await runPredictionGraph(pair, snapshot);
         const consensus = await runConsensus(pair, marketData);
         logDecision({
           snapshotId: snapshot.id, pair, status: 'advisory_only',
