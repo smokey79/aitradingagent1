@@ -7,7 +7,7 @@ const fs = require('fs');
 const ccxt = require('ccxt');
 
 const EPS = 1e-12;
-const FEATURE_COUNT = 11;
+const FEATURE_COUNT = 12;
 let exchangeInstance = null;
 
 function timeframeMs(value) {
@@ -166,7 +166,7 @@ function featureAt(bars, index) {
     Math.log(close / closes[index - 24]),
     (current[4] - current[1]) / current[1],
     (current[2] - current[3]) / close,
-    ((current[4] + current[3]) - (current[2] + current[3])) / candleRange,
+    (2 * current[4] - current[2] - current[3]) / candleRange,
     Math.log((current[5] + EPS) / (avgVolume + EPS)),
     (emaFast - emaSlow) / close,
     (rsiAt(closes, index, 14) - 0.5) * 2,
@@ -178,7 +178,7 @@ function makeExamples(bars) {
   const examples = [];
   for (let i = 24; i < bars.length - 1; i++) {
     const x = featureAt(bars, i);
-    if (x && x.length === FEATURE_COUNT + 1 && x.every(Number.isFinite)) {
+    if (x && x.length === FEATURE_COUNT && x.every(Number.isFinite)) {
       examples.push({ x, y: bars[i + 1][4] > bars[i][4] ? 1 : 0 });
     }
   }
@@ -208,7 +208,7 @@ function sigmoid(z) {
 function trainLogistic(samples, scaler) {
   const x = samples.map((row) => scaler.transform(row.x));
   const y = samples.map((row) => row.y);
-  const weights = Array(FEATURE_COUNT + 2).fill(0);
+  const weights = Array(FEATURE_COUNT + 1).fill(0);
   const prior = Math.min(0.99, Math.max(0.01, mean(y)));
   weights[weights.length - 1] = Math.log(prior / (1 - prior));
   const rate = 0.04;
