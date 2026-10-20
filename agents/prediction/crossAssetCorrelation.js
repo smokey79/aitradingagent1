@@ -64,14 +64,15 @@ function rollingCorrelation(btcBars, assetBars, intervalMs, windows = [48, 96]) 
       asset: Math.log(joined[i].asset / joined[i - 1].asset),
     });
   }
-  const result = { matchedBars: joined.length, returnPairs: paired.length, windows: {} };
+  const result = { matchedBars: joined.length, returnPairs: paired.length,
+    lastMatchedOpen: joined.length ? joined[joined.length - 1].ts : null, windows: {} };
   for (const window of windows) {
     const sample = paired.slice(-window);
+    const coefficient = sample.length >= Math.min(30, window)
+      ? pearson(sample.map((p) => p.btc), sample.map((p) => p.asset)) : null;
     result.windows[window] = {
       samples: sample.length,
-      correlation: sample.length >= Math.min(30, window)
-        ? Number(pearson(sample.map((p) => p.btc), sample.map((p) => p.asset)).toFixed(4))
-        : null,
+      correlation: coefficient === null ? null : Number(coefficient.toFixed(4)),
     };
   }
   return result;
