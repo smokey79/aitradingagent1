@@ -8,7 +8,7 @@ function hardFilter(snapshot, now = Date.now()) {
       now - snapshot.candleClose > 120000) reasons.push('stale_or_open_candle');
   if (!Number.isFinite(snapshot.observedAt) || snapshot.observedAt > now ||
       now - snapshot.observedAt > 30000) reasons.push('stale_snapshot');
-  const recent = bars.slice(-100);
+  const recent = bars; // Validate all bars consumed by the predictor, not just the newest tail.
   for (let i = 0; i < recent.length; i++) {
     const b = recent[i];
     if (b.length < 6 || !b.every(Number.isFinite) || b[1] <= 0 || b[4] <= 0 ||
