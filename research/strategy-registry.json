@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "champion": {
+    "id": "price-only-v1",
+    "strategy": "PriceOnlyChampion",
+    "status": "unvalidated_dry_run_baseline",
+    "mode": "dry_run",
+    "features": [
+      "ema8",
+      "ema21",
+      "rsi14",
+      "volume20"
+    ],
+    "artifact": "freqtrade/user_data/strategies/PriceOnlyChampion.py"
+  },
+  "challengers": [
+    {
+      "id": "next-candle-v1",
+      "status": "shadow_only",
+      "executionAllowed": false
+    },
+    {
+      "id": "price-plus-social-v1",
+      "status": "research_only",
+      "executionAllowed": false
+    }
+  ],
+  "automaticPromotion": false,
+  "automaticCodeEditing": false,
+  "requiredEvidence": {
+    "walkForwardFolds": 3,
+    "closedPaperTrades": 100,
+    "costs": [
+      "fees",
+      "spread",
+      "slippage",
+      "funding_if_applicable"
+    ],
+    "pairedPriceOnlyComparison": true
+  },
+  "rollback": "Restore the previous reviewed commit and its matching strategy/config. Never delete or replace the trade database."
+}
