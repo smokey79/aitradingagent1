@@ -16,6 +16,8 @@ async function getSignal(symbol, marketData) {
     model: MODEL,
     prompt,
     stream: false,
+    keep_alive: '2m',
+    options: { num_ctx: 2048, num_predict: 180, num_thread: 2 },
   }, { timeout: 20000 });
 
   const text = res.data.response.trim();
