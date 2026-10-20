@@ -11,13 +11,14 @@ async function buildGraph() {
   const { Annotation, StateGraph, START, END } = await import('@langchain/langgraph');
   const State = Annotation.Root({
     pair: Annotation(),
+    snapshot: Annotation(),
     report: Annotation(),
     safety: Annotation(),
   });
 
   compiledGraph = new StateGraph(State)
-    .addNode('forecast_and_context', async ({ pair }) => ({
-      report: await predictNextCandle(pair),
+    .addNode('forecast_and_context', async ({ pair, snapshot }) => ({
+      report: await predictNextCandle(pair, { loaded: snapshot && snapshot.candles }),
     }))
     .addNode('shadow_boundary', async ({ report }) => ({
       safety: {
@@ -35,9 +36,9 @@ async function buildGraph() {
   return compiledGraph;
 }
 
-async function runPredictionGraph(pair) {
+async function runPredictionGraph(pair, snapshot) {
   const graph = await buildGraph();
-  const result = await graph.invoke({ pair });
+  const result = await graph.invoke({ pair, snapshot });
   return { ...result.report, pipeline: result.safety };
 }
 
