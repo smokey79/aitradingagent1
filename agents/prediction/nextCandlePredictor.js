@@ -11,6 +11,7 @@ const { recommendPaperStrategy } = require('./contextualBandit');
 const EPS = 1e-12;
 const FEATURE_COUNT = 12;
 let exchangeInstance = null;
+const dailyModels = new Map();
 
 function timeframeMs(value) {
   const match = /^(\d+)(m|h|d)$/.exec(value);
@@ -308,14 +309,22 @@ async function predictNextCandle(pair, options = {}) {
     return { status: 'warming_up', pair, timeframe, candles: bars.length, examples: examples.length, requiredExamples: minExamples, source: loaded.source };
   }
 
-  const split = Math.floor(examples.length * 0.75);
-  const train = examples.slice(0, split);
-  const test = examples.slice(split);
-  const holdout = evaluate(train, test);
-
-  const fullScaler = scalerFor(examples.map((row) => row.x));
-  const predict = trainLogistic(examples, fullScaler);
-  const probabilityUp = predict(featureAt(bars, bars.length - 1));
+  const day = new Date().toISOString().slice(0, 10);
+  const key = normalizePair(pair) + ':' + timeframe;
+  let artifact = dailyModels.get(key);
+  if (!artifact || artifact.day !== day) {
+    const split = Math.floor(examples.length * 0.75);
+    const holdout = evaluate(examples.slice(0, split), examples.slice(split));
+    const fullScaler = scalerFor(examples.map((row) => row.x));
+    artifact = {
+      day, holdout, predict: trainLogistic(examples, fullScaler),
+      trainedThroughMs: bars[bars.length - 1][0] + loaded.intervalMs,
+      trainingExamples: examples.length,
+    };
+    dailyModels.set(key, artifact);
+  }
+  const holdout = artifact.holdout;
+  const probabilityUp = artifact.predict(featureAt(bars, bars.length - 1));
   const validationPassed = holdout.samples >= 100 &&
     holdout.brier < holdout.baseRateBrier && holdout.balancedAccuracy > 0.5;
   const regime = deriveRegime(bars);
@@ -331,6 +340,9 @@ async function predictNextCandle(pair, options = {}) {
     exchange: loaded.exchange,
     candles: bars.length,
     examples: examples.length,
+    trainingExamples: artifact.trainingExamples,
+    trainedThroughMs: artifact.trainedThroughMs,
+    retrainingPolicy: 'once_per_utc_day_per_process',
     asOf: new Date(lastBar[0] + loaded.intervalMs - 1).toISOString(),
     predictsFor: new Date(forecastTime).toISOString(),
     direction: probabilityUp >= 0.5 ? 'up' : 'down',
