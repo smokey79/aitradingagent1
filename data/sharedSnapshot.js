@@ -60,4 +60,11 @@ async function buildSnapshot(pair, options = {}) {
   return freeze({ ...payload, id });
 }
 
-module.exports = { buildSnapshot, bookFeatures, freeze };
+function attachFeeds(snapshot, feeds) {
+  const payload = { ...snapshot, parentSnapshotId: snapshot.id,
+    featureVersion: 'price-book-aggregators-v2', feeds };
+  delete payload.id;
+  const id = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+  return freeze({ ...payload, id });
+}
+module.exports = { buildSnapshot, bookFeatures, freeze, attachFeeds };
