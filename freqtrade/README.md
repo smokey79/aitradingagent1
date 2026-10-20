@@ -1,21 +1,21 @@
-# Freqtrade dry-run profile and Telegram setup
+# Freqtrade dry-run execution core
 
-This is a separate, optional Freqtrade instance. It does not route orders through the existing Node orchestrator. The checked-in profile is Bitget spot, BTC/USDT, 15-minute candles, one simulated position, $250 simulated wallet, and `dry_run: true`. It starts stopped and has Telegram disabled. No exchange or Telegram secrets are stored in this repository.
+Freqtrade is the only intended order/fill/wallet engine. The Node entry point is now research-only and does not call the legacy exchange router or profit allocator.
+
+The checked-in profile selects PriceOnlyChampion: BTC/USDT, Bitget spot, 15-minute bars, one position, 250 USDT simulated wallet and at most 25 USDT per allocation. This EMA/RSI/volume strategy is an unvalidated price-only baseline, with a 2% stop and 4% ROI target. It refuses live startup. It is not connected to AI prediction or social signals.
+
+## Persistence and restart configuration
+
+compose.yaml mounts user_data and sets a restart policy. SQLite is stored at user_data/tradesv3.dryrun.sqlite. Use one Freqtrade process per DB. Keep this file across restarts; do not reset it to hide losses or rerun outcomes. No container was started in this session. The config starts stopped; resume deliberately only after runtime validation. Order/fill recovery has not been tested here.
 
 ## Telegram
 
-1. Create a bot with Telegram's BotFather and start a direct chat with it.
-2. Get your Telegram user ID (or the group ID if using a group; a group gives members access to bot commands).
-3. Add these to your machine's local environment or uncommitted `.env` file:
-   `FREQTRADE__TELEGRAM__ENABLED=true`
-   `FREQTRADE__TELEGRAM__TOKEN=<bot-token>`
-   `FREQTRADE__TELEGRAM__CHAT_ID=<your-user-id>`
-4. Keep `dry_run` true and `initial_state` stopped for initial setup. After startup, Freqtrade's `/tg_info` can confirm chat/group details; Telegram's `/status` can confirm the bot responds.
+Telegram is disabled. No bot token or chat ID has been read or added. Optional local Compose variables are FREQTRADE__TELEGRAM__ENABLED, FREQTRADE__TELEGRAM__TOKEN and FREQTRADE__TELEGRAM__CHAT_ID. Keep secrets in the local environment or ignored freqtrade/.env, never in the tracked JSON.
 
-Freqtrade supports nested configuration overrides with `FREQTRADE__...` environment variables. Do not paste the token into chat, commit it, or place it in the tracked JSON file. This repository does not include a Telegram app connector, and no bot token/chat ID was available to test delivery in this session.
+Create a bot through BotFather, start a private conversation with it, and use your own Telegram user ID. A group chat may give other group members control. After starting the dry-run stack, /tg_info and /status can check routing and responses. No Telegram connector was available here, so delivery has not been verified.
 
-## Strategy requirement
+## Validation required
 
-The config names Freqtrade's `SampleStrategy` as a placeholder. Freqtrade's own sample strategy must be present in the configured strategy path for a Freqtrade process to start. Choose or write and backtest a strategy before running it. This change does not add a strategy, start Freqtrade, enable Telegram, or place orders.
+Import the strategy on the target Freqtrade version, check Bitget/CCXT capabilities, backtest without lookahead, simulate fills with costs, and test a restart with outstanding orders/trades. Verify DB reconciliation and Telegram before any deployment conclusion. Node and Freqtrade intentionally have separate data feeds at present; Node does not send decisions to Freqtrade.
 
-Consult the official Freqtrade Telegram setup and configuration docs before enabling a bot. Keep Telegram commands private to your own user ID.
+See ../../research/IMPLEMENTATION_STATUS.md for the full roadmap and remaining evidence.
