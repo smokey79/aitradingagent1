@@ -1,0 +1,31 @@
+//@version=6
+indicator("AI Agent — Next Candle Audit", overlay=false)
+
+// Chart-side cross-check only. The bot's forecast is calculated from closed CCXT
+// candles; this script does not place orders or claim to forecast direction.
+fast = ta.ema(close, 8)
+slow = ta.ema(close, 21)
+rsiValue = ta.rsi(close, 14)
+atrPct = ta.atr(14) / close
+volumeRatio = volume / math.max(ta.sma(volume, 20), 1)
+
+plot(rsiValue, "RSI 14", color=color.aqua)
+plot((fast - slow) / close * 100, "EMA 8/21 spread %", color=color.orange)
+plot(volumeRatio, "Volume / 20-bar average", color=color.fuchsia)
+hline(50, "RSI midpoint", color=color.gray)
+
+if barstate.isconfirmed
+    payload = '{"source":"TradingView","ticker":"' + syminfo.tickerid +
+      '","timeframe":"' + timeframe.period +
+      '","bar_time":' + str.tostring(time_close) +
+      ',"open":' + str.tostring(open) +
+      ',"high":' + str.tostring(high) +
+      ',"low":' + str.tostring(low) +
+      ',"close":' + str.tostring(close) +
+      ',"volume":' + str.tostring(volume) +
+      ',"rsi14":' + str.tostring(rsiValue) +
+      ',"ema8":' + str.tostring(fast) +
+      ',"ema21":' + str.tostring(slow) +
+      ',"atr_pct":' + str.tostring(atrPct) +
+      ',"volume_ratio":' + str.tostring(volumeRatio) + '}'
+    alert(payload, alert.freq_once_per_bar_close)
