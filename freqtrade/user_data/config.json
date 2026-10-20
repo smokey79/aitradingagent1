@@ -11,16 +11,17 @@
   "timeframe": "15m",
   "trading_mode": "spot",
   "minimal_roi": {
-    "0": 0.03
+    "0": 0.04
   },
-  "stoploss": -0.05,
+  "stoploss": -0.02,
   "order_types": {
     "entry": "limit",
     "exit": "limit",
     "emergency_exit": "market",
     "force_exit": "market",
     "stoploss": "market",
-    "stoploss_on_exchange": false
+    "stoploss_on_exchange": false,
+    "force_entry": "market"
   },
   "order_time_in_force": {
     "entry": "GTC",
@@ -45,14 +46,30 @@
   "api_server": {
     "enabled": false
   },
-  "db_url": "sqlite:///tradesv3.dryrun.sqlite",
+  "db_url": "sqlite:///user_data/tradesv3.dryrun.sqlite",
   "initial_state": "stopped",
   "force_entry_enable": false,
-  "strategy": "SampleStrategy",
+  "strategy": "PriceOnlyChampion",
   "strategy_path": "user_data/strategies/",
   "pairlists": [
     {
       "method": "StaticPairList"
     }
-  ]
+  ],
+  "entry_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+  "exit_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+  "unfilledtimeout": {
+    "entry": 2,
+    "exit": 2,
+    "unit": "minutes"
+  },
+  "ignore_buying_expired_candle_after": 120
 }
