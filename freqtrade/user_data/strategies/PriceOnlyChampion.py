@@ -1,5 +1,7 @@
 """Price-only dry-run baseline. No LLM, external signals, or extra trade database."""
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+import math
+from freqtrade.persistence import Trade
 from pandas import DataFrame
 import talib.abstract as ta
 from freqtrade.strategy import IStrategy
@@ -69,6 +71,28 @@ class PriceOnlyChampion(IStrategy):
         except (ValueError, TypeError):
             return 0.0
 
+    def _loss_budget_ok(self, current_time: datetime) -> bool:
+        """Closed-trade net loss gates, measured against the fixed 250-USDT allocation."""
+        try:
+            now = current_time.astimezone(timezone.utc)
+            day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            week_start = day_start - timedelta(days=day_start.weekday())
+            trades = Trade.get_trades_proxy(is_open=False, close_date=week_start)
+            day_pnl, week_pnl = 0.0, 0.0
+            for trade in trades:
+                closed = trade.close_date_utc
+                pnl = float(trade.close_profit_abs)
+                if closed is None or not math.isfinite(pnl):
+                    return False
+                if closed > now:
+                    continue
+                week_pnl += pnl
+                if closed >= day_start:
+                    day_pnl += pnl
+            return day_pnl > -2.50 and week_pnl > -7.50
+        except Exception:
+            return False  # A missing/unreadable ledger cannot authorize new entries.
+
     def confirm_trade_entry(
         self, pair: str, order_type: str, amount: float, rate: float,
         time_in_force: str, current_time: datetime, entry_tag: str | None,
@@ -78,4 +102,5 @@ class PriceOnlyChampion(IStrategy):
             self.config.get("dry_run") is True
             and pair == "BTC/USDT" and side == "long"
             and amount > 0 and rate > 0 and amount * rate <= 25.01
+            and self._loss_budget_ok(current_time)
         )
