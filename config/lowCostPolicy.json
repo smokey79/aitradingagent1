@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "paidAiEnabled": false,
+  "localReviewsEnabled": true,
+  "maxLocalReviewsPerUtcDay": 4,
+  "minReviewIntervalMinutes": 360,
+  "trainingThreads": 2,
+  "dl4jEnabled": false,
+  "universe": [
+    "BTC/USDT"
+  ],
+  "capitalUsdt": 250,
+  "maxPositionUsdt": 25,
+  "validation": {
+    "historyDays": 365,
+    "walkForwardFolds": 3,
+    "minClosedPaperTrades": 100,
+    "livePromotion": false
+  }
+}
