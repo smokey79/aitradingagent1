@@ -15,3 +15,12 @@ strategy_memory.json
 logs/
 dist/
 build/
+
+# Freqtrade runtime state: persistent locally, never commit secrets or fills
+freqtrade/user_data/research/
+freqtrade/user_data/*.sqlite*
+freqtrade/user_data/config-private.json
+freqtrade/.env
+freqtrade/user_data/data/
+freqtrade/user_data/backtest_results/
+freqtrade/user_data/strategy_memory/
