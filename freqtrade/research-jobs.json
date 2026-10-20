@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "autoRun": false,
+  "workingDirectory": "freqtrade",
+  "notes": "Run sequentially on a verified Freqtrade/FreqAI runtime. Download jobs must show coverage before backtesting. The final holdout must stay untouched during model selection.",
+  "jobs": [
+    {
+      "id": "history",
+      "argv": [
+        "freqtrade",
+        "download-data",
+        "--config",
+        "user_data/config.json",
+        "--pairs",
+        "BTC/USDT",
+        "--timeframes",
+        "15m",
+        "1h",
+        "--days",
+        "365"
+      ]
+    },
+    {
+      "id": "baseline-lookahead",
+      "argv": [
+        "freqtrade",
+        "lookahead-analysis",
+        "--config",
+        "user_data/config.json",
+        "--timerange",
+        "20260420-20260920"
+      ]
+    },
+    {
+      "id": "baseline-recursion",
+      "argv": [
+        "freqtrade",
+        "recursive-analysis",
+        "--config",
+        "user_data/config.json",
+        "--timerange",
+        "20260420-20260920"
+      ]
+    },
+    {
+      "id": "baseline-development",
+      "argv": [
+        "freqtrade",
+        "backtesting",
+        "--config",
+        "user_data/config.json",
+        "--timerange",
+        "20260420-20260920",
+        "--fee",
+        "0.001"
+      ]
+    },
+    {
+      "id": "lightgbm-development",
+      "argv": [
+        "freqtrade",
+        "backtesting",
+        "--config",
+        "user_data/config.freqai-research.json",
+        "--freqaimodel",
+        "LightGBMClassifier",
+        "--timerange",
+        "20260420-20260920",
+        "--fee",
+        "0.001"
+      ]
+    },
+    {
+      "id": "reserved-holdout",
+      "status": "DO_NOT_RUN_UNTIL_MODEL_SELECTION_IS_FROZEN",
+      "timerange": "20260920-20261020"
+    }
+  ]
+}
