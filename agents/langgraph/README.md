@@ -1,7 +1,7 @@
-# LangGraph prediction workflow
+# LangGraph shadow research workflow
 
-The Node orchestrator runs a small LangGraph with two nodes: forecast plus context, then a shadow safety boundary. It calls the existing BTC next-candle predictor, including BTC/gold/FX rolling correlations and the paper-outcome contextual bandit. The graph has no order tool and the result is not passed to consensus, the risk gate, or exchange execution.
+The graph has forecast/context and shadow-boundary nodes. Its input includes the shared immutable research snapshot; the predictor reuses its closed OHLCV bars rather than fetching history again. All output remains advisory. The guard metadata records executionAllowed=false; the stronger boundary is that the research scheduler does not import any order execution module.
 
-Dependencies are declared in the root `package.json` (`@langchain/langgraph`, `@langchain/core`). This project uses CommonJS; the graph module uses Node's dynamic `import()` for LangGraph.
+The scheduler first captures and archives one snapshot, then applies a cheap fail-closed filter. Only eligible snapshots reach LangGraph and the AI consensus. Each price agent receives the same compact price/order-book facts and snapshot ID.
 
-The graph is configured in `agents/langgraph/predictionGraph.js`. Its terminal state explicitly sets `executionAllowed: false`. Treat this as research output only.
+Dependencies are declared in package.json. CommonJS modules use dynamic import for LangGraph. No LangGraph service, Node scheduler or Freqtrade instance was started here.
