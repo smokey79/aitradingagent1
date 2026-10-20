@@ -10,6 +10,7 @@ const { runConsensus } = require('./consensus');
 const { checkRiskGate } = require('../risk-gate/riskGate');
 const { executeTradeOnBestExchange } = require('../utils/exchangeRouter');
 const { allocateProfits } = require('../utils/profitAllocator');
+const { predictNextCandle } = require('../agents/prediction/nextCandlePredictor');
 
 const PAIRS = (process.env.TRADING_PAIRS || 'BTC/USDT,ETH/USDT,CRO/USDT,SOL/USDT').split(',');
 const PAPER = process.env.PAPER_TRADING !== 'false';
@@ -25,6 +26,23 @@ async function runTradingCycle() {
     try {
       logger.info(`\n[${pair}] Fetching market data...`);
       const marketData = await fetchMarketData(pair);
+
+      // Research-only forecast. This result never changes consensus, risk checks, or orders.
+      try {
+        const forecast = await predictNextCandle(pair);
+        if (forecast.status === 'shadow_only') {
+          const holdout = forecast.holdout || {};
+          logger.info('[' + pair + '] Next-candle shadow forecast: ' + forecast.direction +
+            ' P(up)=' + forecast.probabilityUp + ' P(down)=' + forecast.probabilityDown +
+            ' target=' + forecast.predictsFor + ' OOS balanced accuracy=' + holdout.balancedAccuracy +
+            ' Brier=' + holdout.brier + ' vs baseline=' + holdout.baseRateBrier);
+        } else {
+          logger.info('[' + pair + '] Next-candle forecast status: ' + forecast.status +
+            ' source=' + (forecast.source || 'none') + ' candles=' + (forecast.candles || 0));
+        }
+      } catch (forecastError) {
+        logger.warn('[' + pair + '] Next-candle predictor unavailable: ' + forecastError.message);
+      }
 
       logger.info(`[${pair}] Running multi-LLM consensus...`);
       const consensus = await runConsensus(pair, marketData);
