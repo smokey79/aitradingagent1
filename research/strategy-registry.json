@@ -31,6 +31,12 @@
       "executionAllowed": false,
       "upstream": "https://github.com/deeplearning4j/deeplearning4j",
       "modelContract": "ml/dl4j/manifest.schema.json"
+    },
+    {
+      "id": "low-cost-lightgbm-v1",
+      "status": "unvalidated_research_profile",
+      "executionAllowed": false,
+      "configuration": "freqtrade/user_data/config.freqai-research.json"
     }
   ],
   "automaticPromotion": false,
