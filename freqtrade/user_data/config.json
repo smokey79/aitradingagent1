@@ -1,0 +1,58 @@
+{
+  "$schema": "https://schema.freqtrade.io/schema.json",
+  "max_open_trades": 1,
+  "stake_currency": "USDT",
+  "stake_amount": 25,
+  "tradable_balance_ratio": 0.95,
+  "fiat_display_currency": "USD",
+  "dry_run": true,
+  "dry_run_wallet": 250,
+  "cancel_open_orders_on_exit": false,
+  "timeframe": "15m",
+  "trading_mode": "spot",
+  "minimal_roi": {
+    "0": 0.03
+  },
+  "stoploss": -0.05,
+  "order_types": {
+    "entry": "limit",
+    "exit": "limit",
+    "emergency_exit": "market",
+    "force_exit": "market",
+    "stoploss": "market",
+    "stoploss_on_exchange": false
+  },
+  "order_time_in_force": {
+    "entry": "GTC",
+    "exit": "GTC"
+  },
+  "exchange": {
+    "name": "bitget",
+    "api_key": "",
+    "secret": "",
+    "password": "",
+    "pair_whitelist": [
+      "BTC/USDT"
+    ],
+    "pair_blacklist": []
+  },
+  "telegram": {
+    "enabled": false,
+    "token": "",
+    "chat_id": "",
+    "allow_custom_messages": false
+  },
+  "api_server": {
+    "enabled": false
+  },
+  "db_url": "sqlite:///tradesv3.dryrun.sqlite",
+  "initial_state": "stopped",
+  "force_entry_enable": false,
+  "strategy": "SampleStrategy",
+  "strategy_path": "user_data/strategies/",
+  "pairlists": [
+    {
+      "method": "StaticPairList"
+    }
+  ]
+}
