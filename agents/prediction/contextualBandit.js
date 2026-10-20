@@ -12,7 +12,7 @@ function readOutcomes(filePath) {
     try {
       const row = JSON.parse(line);
       if (row && typeof row.strategy === 'string' && typeof row.regime === 'string' &&
-          Number.isFinite(Number(row.rewardR)) && row.closed === true) rows.push(row);
+          typeof row.rewardR === 'number' && Number.isFinite(row.rewardR) && row.closed === true) rows.push(row);
     } catch (_) { /* Ignore malformed lines; the paper log remains append-only. */ }
   }
   return rows;
@@ -25,22 +25,31 @@ function recommendPaperStrategy(regime, options = {}) {
     'consensus,trend_follow,mean_reversion').split(',').map((s) => s.trim()).filter(Boolean);
   const minimum = Math.max(1, Number(options.minimumPerStrategy ||
     process.env.PAPER_RL_MIN_OUTCOMES || 20));
-  const rows = readOutcomes(filePath).filter((row) => row.regime === regime &&
-    strategies.includes(row.strategy));
+  const seen = new Set();
+  const cutoff = options.cutoff || Date.now();
+  const rows = readOutcomes(filePath).filter((row) => {
+    const closedAt = Date.parse(row.closedAt || row.timestamp);
+    const id = row.tradeId || [row.pair, row.strategy, row.timestamp].join(':');
+    if (!options.pair || row.pair !== options.pair || row.regime !== regime ||
+        !strategies.includes(row.strategy) || !Number.isFinite(closedAt) ||
+        closedAt > cutoff || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
   const arms = strategies.map((strategy) => {
     const rewards = rows.filter((row) => row.strategy === strategy).map((row) => Number(row.rewardR));
     const avg = rewards.length ? rewards.reduce((a, b) => a + b, 0) / rewards.length : null;
     return { strategy, samples: rewards.length, meanRewardR: avg === null ? null : Number(avg.toFixed(4)) };
   });
   const ready = arms.filter((arm) => arm.samples >= minimum);
-  if (!ready.length) {
+  if (ready.length !== arms.length || !ready.length) {
     return { status: 'collecting_paper_outcomes', regime, requiredPerStrategy: minimum, arms };
   }
   // UCB1 exploration bonus ranks experiments. It has no access to live order controls.
   const total = ready.reduce((n, arm) => n + arm.samples, 0);
   const ranked = ready.map((arm) => ({
     ...arm,
-    ucbScore: arm.meanRewardR + Math.sqrt(2 * Math.log(Math.max(2, total)) / arm.samples),
+    ucbScore: Math.tanh(arm.meanRewardR) + Math.sqrt(2 * Math.log(Math.max(2, total)) / arm.samples),
   })).sort((a, b) => b.ucbScore - a.ucbScore);
   return {
     status: 'paper_recommendation_only',
