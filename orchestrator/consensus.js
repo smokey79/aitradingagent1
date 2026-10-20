@@ -70,7 +70,7 @@ async function runConsensus(pair, marketData) {
       };
     } catch (err) { socialChallenger = { status: 'unavailable' }; }
   }
-  return { ...baseline, snapshotId: marketData.snapshotId, baseline: 'price_only_agents',
+  return { ...baseline, snapshotId: marketData.snapshotId, baseline: marketData.feeds ? 'market_context_agents_v2' : 'price_only_agents',
     socialChallenger, executionAllowed: false };
 }
 
