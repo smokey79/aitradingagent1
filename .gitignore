@@ -24,3 +24,7 @@ freqtrade/.env
 freqtrade/user_data/data/
 freqtrade/user_data/backtest_results/
 freqtrade/user_data/strategy_memory/
+
+# Local DL4J artifacts and Maven output
+ml/dl4j/target/
+ml/dl4j/models/
