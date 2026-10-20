@@ -8,7 +8,7 @@ const FEATURE_NAMES = ['log_return_1','log_return_3','log_return_6','log_return_
 
 async function predictDl4j(pair, snapshot, options = {}) {
   const env = options.env || process.env;
-  if (env.DL4J_ENABLED === 'false') return { status: 'disabled', executionAllowed: false };
+  if (env.DL4J_ENABLED !== 'true') return { status: 'disabled', executionAllowed: false };
   const now = options.now ? options.now() : Date.now();
   const bars = snapshot && snapshot.candles && snapshot.candles.bars;
   if (pair !== 'BTC/USDT' || !snapshot || snapshot.timeframe !== '15m' ||
