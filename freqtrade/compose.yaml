@@ -1,0 +1,12 @@
+services:
+  freqtrade:
+    image: freqtradeorg/freqtrade:stable
+    restart: unless-stopped
+    volumes:
+      - ./user_data:/freqtrade/user_data
+    environment:
+      FREQTRADE__DRY_RUN: "true"
+      FREQTRADE__TELEGRAM__ENABLED: "${FREQTRADE__TELEGRAM__ENABLED:-false}"
+      FREQTRADE__TELEGRAM__TOKEN: "${FREQTRADE__TELEGRAM__TOKEN:-}"
+      FREQTRADE__TELEGRAM__CHAT_ID: "${FREQTRADE__TELEGRAM__CHAT_ID:-}"
+    command: ["trade", "--config", "/freqtrade/user_data/config.json"]
