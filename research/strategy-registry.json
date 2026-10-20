@@ -23,6 +23,14 @@
       "id": "price-plus-social-v1",
       "status": "research_only",
       "executionAllowed": false
+    },
+    {
+      "id": "dl4j-ohlcv12-v1",
+      "status": "awaiting_trained_artifact",
+      "layer": 3,
+      "executionAllowed": false,
+      "upstream": "https://github.com/deeplearning4j/deeplearning4j",
+      "modelContract": "ml/dl4j/manifest.schema.json"
     }
   ],
   "automaticPromotion": false,
