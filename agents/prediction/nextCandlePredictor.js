@@ -286,11 +286,11 @@ function evaluate(train, test) {
   };
 }
 
-async function predictNextCandle(pair) {
+async function predictNextCandle(pair, options = {}) {
   const timeframe = process.env.PREDICTION_TIMEFRAME || '15m';
   const limit = Math.max(300, Math.min(1000, parseInt(process.env.PREDICTION_CANDLE_LIMIT || '1000', 10)));
   const minExamples = Math.max(250, parseInt(process.env.PREDICTION_MIN_EXAMPLES || '400', 10));
-  const loaded = await loadCandles(pair, timeframe, limit);
+  const loaded = options.loaded || await loadCandles(pair, timeframe, limit);
   const bars = loaded.bars;
   if (bars.length < 100) {
     return { status: 'insufficient_history', pair, timeframe, candles: bars.length, source: loaded.source, exchangeError: loaded.exchangeError };
@@ -319,8 +319,9 @@ async function predictNextCandle(pair) {
   const validationPassed = holdout.samples >= 100 &&
     holdout.brier < holdout.baseRateBrier && holdout.balancedAccuracy > 0.5;
   const regime = deriveRegime(bars);
-  const correlation = getCrossAssetCorrelation(bars, loaded.intervalMs);
-  const paperLearning = recommendPaperStrategy(regime);
+  const correlation = normalizePair(pair) === 'BTC/USDT'
+    ? getCrossAssetCorrelation(bars, loaded.intervalMs) : { status: 'btc_only', assets: {} };
+  const paperLearning = recommendPaperStrategy(regime, { pair, cutoff: Date.now() });
 
   return {
     status: 'shadow_only',
@@ -351,4 +352,4 @@ async function predictNextCandle(pair) {
   };
 }
 
-module.exports = { predictNextCandle, loadCandles, makeExamples, featureAt, deriveRegime };
+module.exports = { predictNextCandle, loadCandles, makeExamples, featureAt, deriveRegime, getExchange };
