@@ -5,7 +5,8 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const cron = require('node-cron');
 const logger = require('../utils/logger');
-const { buildSnapshot, freeze } = require('../data/sharedSnapshot');
+const { buildSnapshot, freeze, attachFeeds } = require('../data/sharedSnapshot');
+const { collectAgentFeeds } = require('../data/agentFeeds');
 const { hardFilter } = require('../risk-gate/hardFilter');
 const { runConsensus } = require('./consensus');
 const { runPredictionGraph } = require('../agents/langgraph/predictionGraph');
@@ -29,9 +30,11 @@ async function runTradingCycle() {
           logger.info('[' + pair + '] Rejected before AI: ' + filter.reasons.join(', '));
           continue;
         }
-        // Optional research work only starts after the cheap filter.
+        // Shared optional feeds are fetched once after rejection checks.
+        snapshot = attachFeeds(snapshot, await collectAgentFeeds(pair));
+        saveSnapshot(snapshot);
         const marketData = freeze({
-          pair, snapshotId: snapshot.id, features: snapshot.features,
+          pair, snapshotId: snapshot.id, features: snapshot.features, feeds: snapshot.feeds,
           featureVersion: snapshot.featureVersion, observedAt: snapshot.observedAt,
           asOf: snapshot.candleClose, ohlcv: snapshot.candles.bars, orderbook: snapshot.book,
           // Do not relabel a USDT quote as a USD aggregator quote.
