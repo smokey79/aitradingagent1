@@ -67,4 +67,11 @@ function attachFeeds(snapshot, feeds) {
   const id = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
   return freeze({ ...payload, id });
 }
-module.exports = { buildSnapshot, bookFeatures, freeze, attachFeeds };
+function attachAnalysis(snapshot, analysis) {
+  const payload = { ...snapshot, parentSnapshotId: snapshot.id,
+    featureVersion: 'market-context-ml-v3', analysis };
+  delete payload.id;
+  const id = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+  return freeze({ ...payload, id });
+}
+module.exports = { buildSnapshot, bookFeatures, freeze, attachFeeds, attachAnalysis };
