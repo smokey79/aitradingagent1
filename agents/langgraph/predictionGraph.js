@@ -4,6 +4,8 @@
  */
 const { predictNextCandle } = require('../prediction/nextCandlePredictor');
 
+const { predictDl4j } = require('../prediction/dl4jPredictor');
+
 let compiledGraph;
 
 async function buildGraph() {
@@ -20,6 +22,9 @@ async function buildGraph() {
     .addNode('forecast_and_context', async ({ pair, snapshot }) => ({
       report: await predictNextCandle(pair, { loaded: snapshot && snapshot.candles }),
     }))
+    .addNode('deep_learning', async ({ pair, snapshot, report }) => ({
+      report: { ...report, deepLearning: await predictDl4j(pair, snapshot) },
+    }))
     .addNode('shadow_boundary', async ({ report }) => ({
       safety: {
         advisoryOnly: true,
@@ -29,7 +34,8 @@ async function buildGraph() {
       },
     }))
     .addEdge(START, 'forecast_and_context')
-    .addEdge('forecast_and_context', 'shadow_boundary')
+    .addEdge('forecast_and_context', 'deep_learning')
+    .addEdge('deep_learning', 'shadow_boundary')
     .addEdge('shadow_boundary', END)
     .compile();
 
