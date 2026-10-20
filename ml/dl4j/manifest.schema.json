@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "modelId",
+    "modelSha256",
+    "featureVersion",
+    "pair",
+    "timeframe",
+    "labels",
+    "trainedThroughMs",
+    "means",
+    "scales"
+  ],
+  "properties": {
+    "modelId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "modelSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "featureVersion": {
+      "const": "dl4j-ohlcv12-v1"
+    },
+    "pair": {
+      "const": "BTC/USDT"
+    },
+    "timeframe": {
+      "const": "15m"
+    },
+    "labels": {
+      "const": [
+        "down",
+        "up"
+      ]
+    },
+    "trainedThroughMs": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "means": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "items": {
+        "type": "number"
+      }
+    },
+    "scales": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "items": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      }
+    }
+  }
+}
